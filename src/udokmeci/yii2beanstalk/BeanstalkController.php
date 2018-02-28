@@ -46,6 +46,8 @@ class BeanstalkController extends Controller
     private $_inProgress = false;
     private $_willTerminate = false;
     private $_test = false;
+    private $_inLoop = false;
+
     /**
      * Collection of tube name and action method name key value pair
      */
@@ -196,9 +198,9 @@ class BeanstalkController extends Controller
         }
         declare (ticks = 1);
 
-        pcntl_signal(SIGTERM, [$this, 'signalHandler'], false);
-        pcntl_signal(SIGINT, [$this, 'signalHandler'], false);
-        pcntl_signal(SIGHUP, [$this, 'signalHandler'], false);
+        pcntl_signal(SIGTERM, [$this, 'signalHandler']);
+        pcntl_signal(SIGINT, [$this, 'signalHandler']);
+        pcntl_signal(SIGHUP, [$this, 'signalHandler']);
         $this->stdout(Yii::t('udokmeci.beanstalkd',
                 "Process Control Extension is loaded. Signal Handling Registered!") . "\n", Console::FG_GREEN);
         return true;
@@ -219,6 +221,11 @@ class BeanstalkController extends Controller
             case SIGINT:
             case SIGHUP:
                 $this->stdout(Yii::t('udokmeci.beanstalkd', "Exiting") . "...\n", Console::FG_RED);
+
+                if ($this->_inLoop) {
+                    throw new StopException();
+                }
+
                 if (!$this->_inProgress) {
                     return $this->end();
                 }
@@ -261,6 +268,7 @@ class BeanstalkController extends Controller
         if ($this->_test) {
             return false;
         }
+
         return Yii::$app->end($status);
     }
 
@@ -303,7 +311,14 @@ class BeanstalkController extends Controller
                 if (isset($bean)) {
                     while (!$this->_willTerminate) {
                         try {
-                            $job = $bean->reserve(99999);
+                            try {
+                                $this->_inLoop = true;
+                                $job = $bean->reserve(99999);
+                                $this->_inLoop = false;
+                            } catch (StopException $e) {
+                                break;
+                            }
+
                             if (!$job) {
                                 if ($this->beanstalk->sleep) {
                                     usleep($this->beanstalk->sleep);
