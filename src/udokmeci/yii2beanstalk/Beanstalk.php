@@ -7,6 +7,7 @@ use Pheanstalk\Pheanstalk;
 use Pheanstalk\PheanstalkInterface;
 use Pheanstalk\Response;
 use Yii;
+use yii\base\Object;
 use yii\base\Component;
 use yii\base\InvalidConfigException;
 
