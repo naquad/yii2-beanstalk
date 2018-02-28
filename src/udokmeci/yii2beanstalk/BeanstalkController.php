@@ -318,7 +318,7 @@ class BeanstalkController extends Controller
                             }
 
                             if (
-                                $this->_lasttimereconnec === null ||
+                                $this->_lasttimereconnect === null ||
                                 time() - $this->_lasttimereconnect > 60 * 60
                             ) {
                                 $this->getDb()->close();
