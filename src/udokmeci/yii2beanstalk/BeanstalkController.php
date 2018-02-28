@@ -37,6 +37,8 @@ class BeanstalkController extends Controller
 
     const EVENT_AFTER_JOB = 'afterJob';
 
+    const RESERVE_TIMEOUT = 1;
+
     /**
      * @var Beanstalk|string
      */
@@ -307,7 +309,7 @@ class BeanstalkController extends Controller
                 if (isset($bean)) {
                     while (!$this->_willTerminate) {
                         try {
-                            $job = $bean->reserve(0);
+                            $job = $bean->reserve(self::RESERVE_TIMEOUT);
                             if (!$job) {
                                 if ($this->beanstalk->sleep) {
                                     usleep($this->beanstalk->sleep);
