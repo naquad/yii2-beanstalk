@@ -7,7 +7,6 @@ use Pheanstalk\Pheanstalk;
 use Pheanstalk\PheanstalkInterface;
 use Pheanstalk\Response;
 use Yii;
-use yii\base\Object;
 use yii\base\Component;
 use yii\base\InvalidConfigException;
 
@@ -42,7 +41,7 @@ class Beanstalk extends Component
 
     public function init()
     {
-        $this->_serializer = Object::createObject($this->serializer);
+        $this->_serializer = Yii::createObject($this->serializer);
 
         if (!$this->_serializer instanceof SerializerInterface) {
             throw new InvalidConfigException("Serializer beanstalk must implement \\udokmeci\\yii2beanstalk\\SerializerInterface.");

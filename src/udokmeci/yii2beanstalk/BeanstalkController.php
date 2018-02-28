@@ -222,10 +222,6 @@ class BeanstalkController extends Controller
             case SIGHUP:
                 $this->stdout(Yii::t('udokmeci.beanstalkd', "Exiting") . "...\n", Console::FG_RED);
 
-                if ($this->_inLoop) {
-                    throw new StopException();
-                }
-
                 if (!$this->_inProgress) {
                     return $this->end();
                 }
@@ -311,25 +307,16 @@ class BeanstalkController extends Controller
                 if (isset($bean)) {
                     while (!$this->_willTerminate) {
                         try {
-                            try {
-                                $this->_inLoop = true;
-                                $job = $bean->reserve(99999);
-                                $this->_inLoop = false;
-                            } catch (StopException $e) {
-                                break;
-                            }
-
+                            $job = $bean->reserve(0);
                             if (!$job) {
                                 if ($this->beanstalk->sleep) {
+                                    var_dump($this->beanstalk->sleep);
                                     usleep($this->beanstalk->sleep);
                                 }                                
                                 continue;
                             }
 
-                            if ($this->_lasttimereconnect == null) {
-                                $this->_lasttimereconnect = time();
-                                $this->setDBSessionTimeout();
-                            } else if (time() - $this->_lasttimereconnect > 60 * 60) {
+                            if ($this->_lasttimereconnec === null || time() - $this->_lasttimereconnect > 60 * 60) {
                                 $this->getDb()->close();
                                 $this->getDb()->open();
                                 Yii::info(Yii::t('udokmeci.beanstalkd', "Reconnecting to the DB"));
