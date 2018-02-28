@@ -195,9 +195,10 @@ class BeanstalkController extends Controller
             return null;
         }
         declare (ticks = 1);
-        pcntl_signal(SIGTERM, [$this, 'signalHandler']);
-        pcntl_signal(SIGINT, [$this, 'signalHandler']);
-        pcntl_signal(SIGHUP, [$this, 'signalHandler']);
+
+        pcntl_signal(SIGTERM, [$this, 'signalHandler'], false);
+        pcntl_signal(SIGINT, [$this, 'signalHandler'], false);
+        pcntl_signal(SIGHUP, [$this, 'signalHandler'], false);
         $this->stdout(Yii::t('udokmeci.beanstalkd',
                 "Process Control Extension is loaded. Signal Handling Registered!") . "\n", Console::FG_GREEN);
         return true;
@@ -302,25 +303,23 @@ class BeanstalkController extends Controller
                 if (isset($bean)) {
                     while (!$this->_willTerminate) {
                         try {
-                            if ($this->_lasttimereconnect == null) {
-                                $this->_lasttimereconnect = time();
-                                $this->setDBSessionTimeout();
-                            }
-
-                            if (time() - $this->_lasttimereconnect > 60 * 60) {
-                                $this->getDb()->close();
-                                $this->getDb()->open();
-                                Yii::info(Yii::t('udokmeci.beanstalkd', "Reconnecting to the DB"));
-                                $this->setDBSessionTimeout();
-                                $this->_lasttimereconnect = time();
-                            }
-
-                            $job = $bean->reserve(1);
+                            $job = $bean->reserve(99999);
                             if (!$job) {
                                 if ($this->beanstalk->sleep) {
                                     usleep($this->beanstalk->sleep);
                                 }                                
                                 continue;
+                            }
+
+                            if ($this->_lasttimereconnect == null) {
+                                $this->_lasttimereconnect = time();
+                                $this->setDBSessionTimeout();
+                            } else if (time() - $this->_lasttimereconnect > 60 * 60) {
+                                $this->getDb()->close();
+                                $this->getDb()->open();
+                                Yii::info(Yii::t('udokmeci.beanstalkd', "Reconnecting to the DB"));
+                                $this->setDBSessionTimeout();
+                                $this->_lasttimereconnect = time();
                             }
 
                             $jobStats = $bean->statsJob($job);

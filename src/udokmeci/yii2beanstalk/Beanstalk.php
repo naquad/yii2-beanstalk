@@ -8,6 +8,7 @@ use Pheanstalk\PheanstalkInterface;
 use Pheanstalk\Response;
 use Yii;
 use yii\base\Component;
+use yii\base\InvalidConfigException;
 
 /**
  * Class Beanstalk
@@ -32,19 +33,25 @@ class Beanstalk extends Component
     public $connected = false;
     public $sleep = false;
 
+    public $serializer = [
+        'class' => __NAMESPACE__ . '\\serializers\\JSON'
+    ];
+
+    protected $_serializer;
+
     public function init()
     {
+        $this->_serializer = Object::createObject($this->serializer);
+
+        if (!$this->_serializer instanceof SerializerInterface) {
+            throw new InvalidConfigException("Serializer beanstalk must implement \\udokmeci\\yii2beanstalk\\SerializerInterface.");
+        }
+
         try {
             $this->_beanstalk = new Pheanstalk($this->host, $this->port, $this->connectTimeout);
         } catch (ConnectionException $e) {
             Yii::error($e);
         }
-    }
-
-    private function isJson($string)
-    {
-        json_decode($string);
-        return (json_last_error() == JSON_ERROR_NONE);
     }
 
     /**
@@ -59,7 +66,7 @@ class Beanstalk extends Component
     {
         try {
             if (!is_string($data)) {
-                $data = json_encode($data);
+                $data = $this->_serializer->serialize($data);
             }
             return $this->_beanstalk->put($data, $priority, $delay, $ttr);
         } catch (ConnectionException $e) {
@@ -101,8 +108,11 @@ class Beanstalk extends Component
 
             //Check for json data.
             if ($result instanceof Job) {
-                if ($this->isJson($result->getData())) {
-                    $result = new Job($result->getId(), json_decode($result->getData()));
+                if ($this->_serializer->isSerialized($result->getData())) {
+                    $result = new Job(
+                        $result->getId(),
+                        $this->_serializer->unserialize($result->getData())
+                    );
                 }
             }
             return $result;
