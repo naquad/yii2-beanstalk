@@ -7,8 +7,6 @@ use udokmeci\yii2beanstalk\SerializerInterface;
 
 class Serialize extends Object implements SerializerInterface
 {
-    public $unserialize_options = [];
-
     public function isSerialized($data)
     {
         $check = @unserialize($data);
@@ -22,6 +20,6 @@ class Serialize extends Object implements SerializerInterface
 
     public function unserialize($data)
     {
-        return unserialize($data, $this->unserialize_options);
+        return unserialize($data);
     }
 }
