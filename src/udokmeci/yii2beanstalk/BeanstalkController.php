@@ -310,13 +310,15 @@ class BeanstalkController extends Controller
                             $job = $bean->reserve(0);
                             if (!$job) {
                                 if ($this->beanstalk->sleep) {
-                                    var_dump($this->beanstalk->sleep);
                                     usleep($this->beanstalk->sleep);
                                 }                                
                                 continue;
                             }
 
-                            if ($this->_lasttimereconnec === null || time() - $this->_lasttimereconnect > 60 * 60) {
+                            if (
+                                $this->_lasttimereconnec === null ||
+                                time() - $this->_lasttimereconnect > 60 * 60
+                            ) {
                                 $this->getDb()->close();
                                 $this->getDb()->open();
                                 Yii::info(Yii::t('udokmeci.beanstalkd', "Reconnecting to the DB"));
@@ -347,9 +349,6 @@ class BeanstalkController extends Controller
                         }
                         $this->_inProgress = false;
                         $this->trigger(self::EVENT_AFTER_JOB, new Event);
-                        if ($this->beanstalk->sleep) {
-                            usleep($this->beanstalk->sleep);
-                        }
                     }
                 }
             } catch (ServerException $e) {
