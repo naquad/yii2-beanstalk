@@ -2,10 +2,10 @@
 
 namespace udokmeci\yii2beanstalk\serializers;
 
-use yii\base\Object;
+use yii\base\BaseObject;
 use udokmeci\yii2beanstalk\SerializerInterface;
 
-class JSON extends Object implements SerializerInterface
+class JSON extends BaseObject implements SerializerInterface
 {
     public $encode_options = 0;
     public $encode_depth = 512;

@@ -2,10 +2,10 @@
 
 namespace udokmeci\yii2beanstalk\serializers;
 
-use yii\base\Object;
+use yii\base\BaseObject;
 use udokmeci\yii2beanstalk\SerializerInterface;
 
-class Serialize extends Object implements SerializerInterface
+class Serialize extends BaseObject implements SerializerInterface
 {
     public function isSerialized($data)
     {
